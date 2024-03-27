@@ -9,7 +9,6 @@
 -- Info mostly from
 -- https://github.com/zigbeefordomoticz/wiki/blob/master/en-eng/Technical/Tuya-0xEF00.md
 --
-
 zcl_ef00_protocol = Proto("zcl_ef00", "ZCL EF00 cluster")
 
 -- +-----------+----------+------------------+--------------+-------------+------------+-------+-------------+
@@ -65,8 +64,9 @@ function zcl_ef00_protocol.dissector(buffer, pinfo, tree)
         data_type = buffer(4, 1):int()
         info = info ..
                    (string.format(", dtype: %s", get_datatype_name(data_type)))
-        subtree:add(DataType, buffer(4, 1)):append_text(" " .. get_datatype_name(
-                                                            data_type))
+        subtree:add(DataType, buffer(4, 1)):append_text(" " ..
+                                                            get_datatype_name(
+                                                                data_type))
     end
     if length > 5 then
         func = buffer(5, 1):int()
@@ -105,8 +105,10 @@ function zcl_ef00_protocol.dissector(buffer, pinfo, tree)
             info = info .. (string.format(", data: %s", buf))
             subtree:add(Data, buf):append_text(string.format(" \"%s\"", buf))
         elseif data_type == 0x04 then -- enum
+            info = info .. (string.format(", data: %d", data))
             subtree:add(Data, buf):append_text(" (enum)")
         elseif data_type == 0x05 then -- fault
+            info = info .. (string.format(", data: %d", data))
             subtree:add(Data, buf):append_text(" (fault)")
         else
             subtree:add(Data, buf)
