@@ -44,7 +44,12 @@ function zcl_ef00_protocol.dissector(buffer, pinfo, tree)
     local info = "ZCL 0xEF00"
 
     cmd = buffer(0, 1):int()
-    subtree:add(Cmd, cmd):append_text(get_command_name(cmd))
+    subtree:add(Cmd, buffer(0, 1)):append_text(" " .. get_command_name(cmd))
+    -- skip commands other than 1 and 2, just dump rest of buffer as Data
+    if cmd > 0x02 then
+        subtree:add(Data, buffer(1, length - 1))
+        goto done
+    end
     if length > 1 then
         status = buffer(1, 1):int()
         subtree:add(Status, buffer(1, 1))
@@ -76,7 +81,7 @@ function zcl_ef00_protocol.dissector(buffer, pinfo, tree)
         data_len = buffer(6, 1):int()
         subtree:add(Len, buffer(6, 1))
     end
-    if length > (data_len + 6) then
+    if length > 7 and length > (data_len + 6) then
         local buf = buffer(7, data_len)
         data = buf:int()
         if data_type == 1 then -- bool
@@ -115,6 +120,7 @@ function zcl_ef00_protocol.dissector(buffer, pinfo, tree)
         end
     end
 
+    ::done::
     pinfo.cols.info:append(info)
 
 end
@@ -126,10 +132,30 @@ function get_command_name(cmd)
     -- 0x01 - Query and report product information, 0x02 - Device Status Query / Report
     local cmd_name = string.format(" Unknown", cmd)
 
-    if cmd == 1 then
-        cmd_name = " Query and report product info"
-    elseif cmd == 2 then
-        cmd_name = " Device Status Query / Report"
+    if cmd == 0x01 then
+        cmd_name = "Query and report product info"
+    elseif cmd == 0x02 then
+        cmd_name = "Device Status Query / Report"
+    elseif cmd == 0x03 then
+        cmd_name = "Zigbee Device Reset"
+    elseif cmd == 0x04 then
+        cmd_name = "Order Issuance"
+    elseif cmd == 0x05 then
+        cmd_name = "Status Report"
+    elseif cmd == 0x06 then
+        cmd_name = "Status Search"
+    elseif cmd == 0x07 then
+        cmd_name = "Reserved"
+    elseif cmd == 0x08 then
+        cmd_name = "Zigbee Device Functional Test"
+    elseif cmd == 0x09 then
+        cmd_name = "Query key information"
+    elseif cmd == 0x0A then
+        cmd_name = "Scene wakeup"
+    elseif cmd > 0x0A and cmd < 0x24 then
+        cmd_name = "Reserved"
+    elseif cmd == 0x24 then
+        cmd_name = "Time synchonization"
     end
     return cmd_name
 end
